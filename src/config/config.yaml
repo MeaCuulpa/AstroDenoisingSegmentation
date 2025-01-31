@@ -1,0 +1,28 @@
+# Аппаратные настройки
+hardware:
+  device: "cuda"                         # auto/cuda/cpu/mps
+  batch_size: 16                         # Размер батча для обработки
+  num_workers: 0                         # Потоки загрузки данных
+
+# Пример параметров для обучения (если нужно)
+training:
+    epochs: 500
+    learning_rate: 0.001
+    optimizer: "AdamW"
+    scheduler: "CosineAnnealing"
+    weight_decay: 0.0001
+
+# Пути к данным и моделям
+paths:
+  input_data_dir: "../../data/raw_images"                       # Директория с исходными изображениями
+  noised_data_dir: "../../data/noised_images"                   # Директория с зашумленными изображениями
+  processed_data_dir: "../../data/processed"                     # Директория для очищенных изображений
+  test_data_dir: "../../data/test_images"                       # Диреятория для тестовых данных
+  masks_data_dir: "../../data/masks"
+  denoiser_model: "../../models/best_model_denoising.pth"       # Путь к модели денойзера
+  segmentation_model: "../../models/best_model_segm.pth" # Путь к модели сегментатора
+
+# Параметры обработки изображений
+image:
+  img_size: 128                       # Размер изображения для обработки
+  channels: 1                         # Количество каналов в изображении
