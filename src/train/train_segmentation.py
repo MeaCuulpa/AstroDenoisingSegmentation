@@ -6,7 +6,7 @@ import torch
 import torch.optim as optim
 import torch.nn as nn
 import numpy as np
-from sklearn.metrics import precision_score, recall_score, f1_score
+from sklearn.metrics import precision_score, recall_score, f1_score, jaccard_score
 from torch.utils.data import DataLoader
 
 # Использование конфига
@@ -57,6 +57,7 @@ val_losses = []
 precisions = []
 recalls = []
 f1_scores = []
+ious = []
 
 # Обучение модели
 for epoch in range(EPOCHS):
@@ -93,6 +94,7 @@ for epoch in range(EPOCHS):
             all_preds.append(preds.reshape(-1))
             all_masks.append(masks_np.reshape(-1))
 
+
     # Нормализация лоссов
     train_loss = epoch_loss / len(train_loader)
     val_loss = val_loss / len(val_loader)
@@ -104,6 +106,7 @@ for epoch in range(EPOCHS):
     all_preds = np.concatenate(all_preds)
     all_masks = np.concatenate(all_masks)
 
+    iou = jaccard_score(all_masks, all_preds, average='macro', zero_division=0)
     precision = precision_score(all_masks, all_preds, average='macro', zero_division=0)
     recall = recall_score(all_masks, all_preds, average='macro', zero_division=0)
     f1 = f1_score(all_masks, all_preds, average='macro', zero_division=0)
@@ -114,6 +117,7 @@ for epoch in range(EPOCHS):
     precisions.append(precision)
     recalls.append(recall)
     f1_scores.append(f1)
+    ious.append(iou)
 
     # Проверка на улучшение val_loss
     if val_loss < best_val_loss:
@@ -128,9 +132,9 @@ for epoch in range(EPOCHS):
 
     print(f'Epoch {epoch + 1}')
     print(f'Train Loss: {train_losses[-1]:.4f} | Val Loss: {val_losses[-1]:.4f}')
-    print(f'Precision: {precision:.4f} | Recall: {recall:.4f} | F1: {f1:.4f}\n')
+    print(f'Precision: {precision:.4f} | Recall: {recall:.4f} | F1: {f1:.4f} | IoU: {iou:.4f}\n')
 
     # Загрузка лучшей модели
     model.load_state_dict(torch.load('../../models/best_model_segm.pth'))
 
-plot_results_segmentation(model, train_losses, val_losses, precisions, recalls, f1_scores, val_dataset, DEVICE)
+plot_results_segmentation(model, train_losses, val_losses, precisions, recalls, f1_scores, ious, val_dataset, DEVICE)

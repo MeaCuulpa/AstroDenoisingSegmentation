@@ -5,6 +5,7 @@ import numpy as np
 import cv2
 import random
 import os
+from PIL import Image
 
 
 # Функция для создания кругов (звезд)
@@ -47,11 +48,11 @@ def add_glow(image):
 
 
 # Генерация изображения и маски
-def generate_image_and_mask():
-    image = np.zeros((128, 128), dtype=np.uint8)  # Черное изображение
-    mask = np.zeros((128, 128), dtype=np.uint8)  # Маска (фон = 0)
+def generate_image_and_mask(shape=(128, 128)):
+    image = np.zeros(shape, dtype=np.uint8)  # Черное изображение
+    mask = np.zeros(shape, dtype=np.uint8)  # Маска (фон = 0)
 
-    num_objects = random.randint(2, 4)  # Количество объектов
+    num_objects = random.randint(5, 10)  # Количество объектов
     num_static_stars = random.randint(1, num_objects - 1)  # Часть из них — звезды
     num_moving_objects = num_objects - num_static_stars
 
@@ -66,7 +67,7 @@ def generate_image_and_mask():
 
 
 # Генерация датасета изображения и масок
-def generate_test_dataset(dataset_size=1000):
+def generate_test_dataset(img_size, dataset_size=1000):
     # Использование конфига
     config = load_config(r'../config/config.yaml')
 
@@ -85,7 +86,7 @@ def generate_test_dataset(dataset_size=1000):
     os.mkdir(NOISE_DIR)
 
     for i in range(dataset_size):  # Сгенерировать набор данных
-        image, mask = generate_image_and_mask()
+        image, mask = generate_image_and_mask(img_size)
         transorm = ApplySpaceDefects()
 
         # Сохранение изображения и маски
@@ -99,3 +100,94 @@ def generate_test_dataset(dataset_size=1000):
 
 
         print(f"Сохранены: {image_path}, {mask_path}, {noisy_image_path}")
+
+
+def generate_coordinates(width, height, patch_size, stride):
+    """Генерирует координаты для нарезки изображения с перекрытием"""
+    x_coords = []
+    y_coords = []
+
+    # Генерация координат по X
+    x = 0
+    while x + patch_size <= width:
+        x_coords.append(x)
+        x += stride
+    if x_coords and (x_coords[-1] + patch_size) < width:
+        x_coords.append(max(0, width - patch_size))
+
+    # Генерация координат по Y
+    y = 0
+    while y + patch_size <= height:
+        y_coords.append(y)
+        y += stride
+    if y_coords and (y_coords[-1] + patch_size) < height:
+        y_coords.append(max(0, height - patch_size))
+
+    # Создаем все комбинации координат
+    return [(x, y) for x in x_coords for y in y_coords]
+
+
+def split_into_patches(raw_images_dir, noised_images_dir, patch_size=256, stride=128):
+    """Основная функция для нарезки изображений на патчи"""
+
+    # Создаем выходные директории
+    output_raw = os.path.join(os.path.dirname(raw_images_dir), 'raw_patches')
+    output_noised = os.path.join(os.path.dirname(noised_images_dir), 'noised_patches')
+    os.makedirs(output_raw, exist_ok=True)
+    os.makedirs(output_noised, exist_ok=True)
+
+    # Обрабатываем 1000 файлов
+    for i in range(0, 9):
+        raw_file = f"image_{i}.tiff"
+        noised_file = f"def_{i}.tiff"
+
+        raw_path = os.path.join(raw_images_dir, raw_file)
+        noised_path = os.path.join(noised_images_dir, noised_file)
+
+        # Проверяем, существуют ли оба файла
+        if not os.path.exists(raw_path) or not os.path.exists(noised_path):
+            print(f"Файлы для {i} не найдены. Пропускаем.")
+            continue
+
+        try:
+            with Image.open(raw_path) as raw_img, Image.open(noised_path) as noised_img:
+                if raw_img.size != noised_img.size:
+                    print(f"Размеры изображений для {i} не совпадают. Пропускаем.")
+                    continue
+
+                width, height = raw_img.size
+                if width < patch_size or height < patch_size:
+                    print(f"Изображение для {i} слишком маленькое. Пропускаем.")
+                    continue
+
+                # Генерируем координаты патчей
+                coords = generate_coordinates(width, height, patch_size, stride)
+
+                # Сохраняем патчи
+                base_name = f"image_{i}"  # Используем имя из raw_images
+                for x, y in coords:
+                    box = (x, y, x + patch_size, y + patch_size)
+                    raw_patch = raw_img.crop(box)
+                    noised_patch = noised_img.crop(box)
+
+                    patch_name = f"{base_name}_x{x}_y{y}.png"
+                    raw_patch.save(os.path.join(output_raw, patch_name))
+                    noised_patch.save(os.path.join(output_noised, patch_name))
+
+                print(f"Обработан {i}: {len(coords)} патчей")
+
+        except Exception as e:
+            print(f"Ошибка обработки {i}: {str(e)}")
+
+    print("Нарезка изображений завершена!")
+
+
+# Пример использования
+# split_into_patches(
+#     raw_images_dir='E:\\AstroDenoisingSegmentation\\data\\raw_images',
+#     noised_images_dir='E:\\AstroDenoisingSegmentation\\data\\noised_images',
+#     patch_size=256,
+#     stride=128
+# )
+
+#generate_test_dataset((256, 256))

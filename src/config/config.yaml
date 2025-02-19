@@ -9,7 +9,6 @@ training:
     epochs: 500
     learning_rate: 0.001
     optimizer: "AdamW"
-    scheduler: "CosineAnnealing"
     weight_decay: 0.0001
 
 # Пути к данным и моделям
@@ -17,12 +16,14 @@ paths:
   input_data_dir: "../../data/raw_images"                       # Директория с исходными изображениями
   noised_data_dir: "../../data/noised_images"                   # Директория с зашумленными изображениями
   processed_data_dir: "../../data/processed"                     # Директория для очищенных изображений
-  test_data_dir: "../../data/test_images"                       # Диреятория для тестовых данных
-  masks_data_dir: "../../data/masks"
+  test_data_dir: "../../data/test_images"                       # Директория для тестовых данных
+  masks_data_dir: "../../data/masks"                            # Директория для масок
+  real_data_dir: "../../data/real_images"                       # Директория для реальных тестовых изображентй
+  cutted_data_dir: "../../data/cutted_images"                   # Директория для нарещанных
   denoiser_model: "../../models/best_model_denoising.pth"       # Путь к модели денойзера
   segmentation_model: "../../models/best_model_segm.pth" # Путь к модели сегментатора
 
 # Параметры обработки изображений
 image:
-  img_size: 128                       # Размер изображения для обработки
+  img_size: 256                       # Размер изображения для обработки
   channels: 1                         # Количество каналов в изображении

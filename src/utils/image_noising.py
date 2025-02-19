@@ -39,8 +39,8 @@ class ApplySpaceDefects:
         self.glare_val = glare_val
 
     def create_gauss(self, image):
-        noise = np.zeros_like(image)
-        cv2.randn(noise, 20, 20)
+        noise = np.random.normal(loc=20, scale=5, size=image.shape).round().astype(image.dtype)
+        noise = np.where(noise > 0, noise, 0)
         return cv2.add(image, noise)
 
     def create_lines(self, image):

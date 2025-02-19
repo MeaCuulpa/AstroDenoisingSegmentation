@@ -8,6 +8,7 @@ class ResidualBlock(nn.Module):
         self.conv1 = nn.Conv2d(in_channels, in_channels, 3, padding=1)
         self.bn1 = nn.BatchNorm2d(in_channels)
         self.lrelu = nn.LeakyReLU(0.2, inplace=True)
+        self.dropout = nn.Dropout2d(0.2)  # Добавлено
         self.conv2 = nn.Conv2d(in_channels, in_channels, 3, padding=1)
         self.bn2 = nn.BatchNorm2d(in_channels)
 
@@ -16,11 +17,11 @@ class ResidualBlock(nn.Module):
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.lrelu(x)
+        x = self.dropout(x)
         x = self.conv2(x)
         x = self.bn2(x)
         x += residual
         return self.lrelu(x)
-
 
 class Denoiser(nn.Module):
     def __init__(self, in_channels=1, out_channels=1):
